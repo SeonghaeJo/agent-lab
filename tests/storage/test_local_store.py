@@ -35,6 +35,20 @@ def test_raw_document_upsert_is_idempotent_by_source_and_external_id(tmp_path) -
     assert store.count_raw_documents() == 1
 
 
+def test_initialize_creates_required_storage_tables(tmp_path) -> None:
+    store = LocalStore(tmp_path / "agent.sqlite")
+    store.initialize()
+
+    assert store.list_table_names() >= {
+        "raw_documents",
+        "ticker_prices",
+        "model_outputs",
+        "predictions",
+        "paper_trades",
+        "evaluation_scores",
+    }
+
+
 def test_raw_documents_can_be_found_by_content_hash(tmp_path) -> None:
     store = LocalStore(tmp_path / "agent.sqlite")
     store.initialize()

@@ -30,6 +30,21 @@ class LocalStore:
                 CREATE INDEX IF NOT EXISTS idx_raw_documents_content_hash
                     ON raw_documents(content_hash);
 
+                CREATE TABLE IF NOT EXISTS ticker_prices (
+                    ticker TEXT NOT NULL,
+                    trading_date TEXT NOT NULL,
+                    open REAL NOT NULL,
+                    high REAL NOT NULL,
+                    low REAL NOT NULL,
+                    close REAL NOT NULL,
+                    volume INTEGER NOT NULL,
+                    provider TEXT NOT NULL,
+                    PRIMARY KEY (ticker, trading_date, provider)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_ticker_prices_trading_date
+                    ON ticker_prices(trading_date);
+
                 CREATE TABLE IF NOT EXISTS model_outputs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     report_date TEXT NOT NULL,
@@ -42,6 +57,47 @@ class LocalStore:
 
                 CREATE INDEX IF NOT EXISTS idx_model_outputs_report_date
                     ON model_outputs(report_date);
+
+                CREATE TABLE IF NOT EXISTS predictions (
+                    prediction_id TEXT PRIMARY KEY,
+                    report_date TEXT NOT NULL,
+                    ticker TEXT NOT NULL,
+                    horizon_days INTEGER NOT NULL,
+                    direction TEXT NOT NULL,
+                    probability REAL NOT NULL,
+                    evidence_ids TEXT NOT NULL,
+                    model_id TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_predictions_report_date
+                    ON predictions(report_date);
+
+                CREATE TABLE IF NOT EXISTS paper_trades (
+                    order_id TEXT PRIMARY KEY,
+                    submitted_at TEXT NOT NULL,
+                    ticker TEXT NOT NULL,
+                    side TEXT NOT NULL,
+                    qty REAL NOT NULL,
+                    limit_price REAL,
+                    status TEXT NOT NULL,
+                    provider TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_paper_trades_submitted_at
+                    ON paper_trades(submitted_at);
+
+                CREATE TABLE IF NOT EXISTS evaluation_scores (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    prediction_id TEXT NOT NULL,
+                    evaluated_at TEXT NOT NULL,
+                    realized_return REAL NOT NULL,
+                    benchmark_return REAL NOT NULL,
+                    excess_return REAL NOT NULL,
+                    score_json TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_evaluation_scores_prediction_id
+                    ON evaluation_scores(prediction_id);
                 """
             )
 
@@ -106,6 +162,17 @@ class LocalStore:
         with self._connect() as connection:
             row = connection.execute("SELECT COUNT(*) AS count FROM raw_documents").fetchone()
         return int(row["count"])
+
+    def list_table_names(self) -> set[str]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT name
+                FROM sqlite_master
+                WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+                """
+            ).fetchall()
+        return {row["name"] for row in rows}
 
     def insert_model_output(self, output: ModelOutput) -> None:
         with self._connect() as connection:
