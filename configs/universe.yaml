@@ -1,0 +1,13 @@
+universe_name: us_mega_cap_seed
+market: US
+benchmark_symbols:
+  - SPY
+  - QQQ
+tickers:
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMZN
+  - GOOGL
+  - META
+  - TSLA

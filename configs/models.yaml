@@ -1,0 +1,11 @@
+daily_budget_usd: 5.00
+analyst_models:
+  - id: openai/low-cost-placeholder
+    role: fast_analyst
+    enabled: false
+  - id: anthropic/reasoning-placeholder
+    role: reasoning_analyst
+    enabled: false
+  - id: gemini/skeptic-placeholder
+    role: skeptic
+    enabled: false
